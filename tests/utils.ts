@@ -12,9 +12,10 @@ import {
   Cid,
   DataStream,
   DidKeyResolver,
-  PrivateKeySigner,
   RecordsWrite,
+  SubscriptionRequest,
 } from '@tbd54566975/dwn-sdk-js';
+import { Jws } from '@tbd54566975/dwn-sdk-js';
 
 // __filename and __dirname are not defined in ES module scope
 const __filename = fileURLToPath(import.meta.url);
@@ -31,18 +32,11 @@ export type Profile = {
 
 export async function createProfile(): Promise<Profile> {
   const { did, keyPair, keyId } = await DidKeyResolver.generate();
-
-  // signer is required by all dwn message classes. it's used to sign messages
-  const signer = new PrivateKeySigner({
-    privateJwk: keyPair.privateJwk,
-    algorithm: keyPair.privateJwk.alg,
-    keyId: `${did}#${keyId}`,
-  });
-
+  const signer = Jws.createSigner({ keyPair, keyId });
   return {
-    did,
-    keyPair,
-    signer,
+    did: did,
+    keyPair: keyPair,
+    signer: signer,
   };
 }
 
@@ -66,6 +60,19 @@ export type GenerateProtocolsConfigureOutput = {
   recordsWrite: RecordsWrite;
   dataStream: Readable | undefined;
 };
+
+export type CreateSubscriptionRequestOverride = {};
+
+export async function createSubscriptionRequest(
+  signer: Profile,
+  overrides: CreateSubscriptionRequestOverride,
+): Promise<SubscriptionRequest> {
+  console.log(overrides);
+  const subscriptionRequest = await SubscriptionRequest.create({
+    signer: signer.signer,
+  });
+  return subscriptionRequest;
+}
 
 export async function createRecordsWriteMessage(
   signer: Profile,
